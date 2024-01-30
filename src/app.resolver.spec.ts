@@ -1,45 +1,39 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppResolver } from './app.resolver';
-import { DxPaymentService } from './dx-payment-service';
 import { Request } from 'express';
 import { AppService } from './app.service';
 
 describe('AppResolver', () => {
   let resolver: AppResolver;
-  let dxPaymentService: DxPaymentService;
+  let appService: AppService;
+  const expectedUrl = 'http://localhost:3001';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AppResolver,
-        DxPaymentService,
         {
           provide: AppService,
           useValue: {
-            getBaseUrl: jest.fn().mockReturnValue('http://localhost:3001'),
+            getBaseUrl: jest.fn().mockReturnValue(expectedUrl),
           },
         },
       ],
     }).compile();
 
     resolver = module.get<AppResolver>(AppResolver);
-    dxPaymentService = module.get<DxPaymentService>(DxPaymentService);
+    appService = module.get<AppService>(AppService);
   });
 
   describe('getBaseUrl', () => {
     it('should return the message from appService', () => {
-      const mockRequest: unknown = {
-        headers: {
-          'x-action': 'payment',
-        },
-      };
-      jest
-        .spyOn(dxPaymentService, 'getPaymentServiceBaseUrl')
-        .mockReturnValue('http://localhost:3001');
-
-      const result = resolver.getBaseUrl({ req: mockRequest as Request });
+      const req: Request = {} as Request;
+      const context = { req };
+      jest.spyOn(appService, 'getBaseUrl').mockReturnValue(expectedUrl);
+      const result = resolver.getBaseUrl(context);
 
       expect(result).toBe('http://localhost:3001');
+      expect(appService.getBaseUrl).toHaveBeenCalledWith(context.req);
     });
   });
 });
